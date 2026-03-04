@@ -41,7 +41,7 @@ def mutual_information_bits(rho_ij):
 def superop_from_kraus(kraus):
     S = None
     for A in kraus:
-        term = kron(A, xp.conj(A))
+        term = kron(xp.conj(A), A)
         S = term if S is None else (S + term)
     return S
 
