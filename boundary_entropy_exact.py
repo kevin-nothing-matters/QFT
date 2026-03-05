@@ -201,8 +201,8 @@ def von_neumann_entropy(rho, eps=1e-14):
 
 # ── Main ───────────────────────────────────────────────────────────────────
 
-DEPTH   = 6
-N_TREES = 10
+DEPTH   = 5
+N_TREES = 20
 N_LEAVES = 2**DEPTH
 interval_sizes = list(range(1, 17))
 
