@@ -124,77 +124,10 @@ def compute_joint_density_matrix(leaves, depth, gates):
         end = start + span
         return [l for l in leaves if start <= l < end]
 
-    def propagate(node, gen, rho_parent, parent_qubit_idx_in_state):
-        """
-        Propagate state through node, keeping track of which target leaves
-        are in each subtree.
-
-        rho_parent: current joint density matrix (2^k x 2^k)
-                    where k = number of tracked qubits
-        parent_qubit_idx_in_state: which qubit in rho_parent is the parent
-
-        Returns: updated rho with parent replaced by its children
-                 (only children that lead to target leaves)
-        """
-        nonlocal rho_current, tracked_leaves
-
-        left_child  = 2*node + 1
-        right_child = 2*node + 2
-        left_gen    = gen + 1
-        right_gen   = gen + 1
-
-        left_targets  = subtree_leaves(left_child,  left_gen)  if left_gen  <= depth else []
-        right_targets = subtree_leaves(right_child, right_gen) if right_gen <= depth else []
-
-        K = gates[(gen, node)]  # Kraus ops: 4x2 each
-
-        return left_targets, right_targets, K
-
-    # ── Iterative approach: build full statevector for small systems ───────
-    # For l <= 8 target leaves at depth 8, we build the reduced density matrix
-    # by computing the full 2^depth statevector and tracing out non-target leaves.
-    # At depth 8: 2^8 = 256 dimensional statevector — very fast.
-
-    n_all_leaves = 2**depth
-    dim = n_all_leaves
-
-    # Build full statevector via unitary circuit on all leaves
-    # We represent the state as a vector in the 2^n_leaves Hilbert space
-    # where qubit ordering is leaf 0, leaf 1, ..., leaf_{n_leaves-1}
-
-    # Initialize: all leaves in |0>
-    psi = np.zeros(dim, dtype=complex)
-    psi[0] = 1.0
-
-    # Apply the tree as a unitary on the leaf space
-    # Each internal node's branching channel maps parent -> two children
-    # We implement this as a unitary by fixing the environment (ancilla = |0>)
-    # and applying the full 3-qubit unitary, then discarding the parent
-
-    # Since we're working with a pure state and want S(A) for a subsystem,
-    # we can use the Schmidt decomposition approach:
-    # Build psi as a statevector over all leaves, then compute reduced density matrix
-
-    # The tree circuit acts on qubits in a specific order.
-    # We process generation by generation, top to bottom.
-    # At each generation, we apply the branching unitary to each node.
-
-    # State representation: tensor product of all leaf qubits
-    # Initially all in |0>, but the tree has internal structure.
-
-    # More practical: use the recursive Kraus approach to build
-    # the full density matrix of ALL leaves, then trace out non-target leaves.
-
-    # Build rho over all leaves recursively
     rho_all = build_full_leaf_density_matrix(depth, gates)
-
-    # Now trace out all leaves NOT in our target set
     target_set = set(leaves)
-    all_leaves_list = list(range(n_all_leaves))
-    trace_out = [i for i in all_leaves_list if i not in target_set]
-
-    rho_reduced = partial_trace_numpy(rho_all, trace_out, n_all_leaves)
-    return rho_reduced
+    trace_out = [i for i in range(2**depth) if i not in target_set]
+    return partial_trace_numpy(rho_all, trace_out, 2**depth)
 
 
 def build_full_leaf_density_matrix(depth, gates):
