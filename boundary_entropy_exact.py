@@ -93,31 +93,6 @@ def build_full_leaf_dm(depth, gates):
             # rho shape: (2,)*2*n_active, target ket axis = node_idx
             # After: shape has node_idx axis replaced by (4,) = (c1c2 combined)
             
-            rho_shape = (2,) * (2 * n_active)
-            rho_tensor = rho.reshape(rho_shape)
-            
-            # Contract ket axis node_idx: sum over p dimension
-            # K_ket[c12, p] -> new axis of size 4 at position node_idx
-            K_sum = sum(
-                np.tensordot(K[s], np.tensordot(K[s].conj(), rho_tensor, 
-                             axes=([1], [n_active + node_idx])),
-                             axes=([1], [node_idx]))
-                for s in range(len(K))
-            )
-            # K_sum has shape: (4,) + remaining_bra + (4,) 
-            # where the first (4,) is new ket c1c2, last (4,) is new bra c1'c2'
-            # We need to split each 4 -> (2,2) and place correctly
-            
-            # Reshape: split combined c1c2 indices into separate c1, c2
-            # Current shape after tensordot operations needs careful tracking
-            # Use a cleaner approach: einsum
-            
-            # Rebuild using einsum for clarity
-            # rho[i0..i_{n-1}, j0..j_{n-1}] (flattened ket/bra)
-            # new_rho[i0..c1,c2..i_{n-1}, j0..d1,d2..j_{n-1}] =
-            #   sum_{p,q,s} K[s][c1c2,p] K*[s][d1d2,q] rho[i0..p..i_{n-1}, j0..q..j_{n-1}]
-            
-            # Flatten rho to 2D for einsum
             dim = 2**n_active
             rho_2d = rho.reshape(dim, dim)
             
