@@ -196,29 +196,32 @@ rng_G = np.random.default_rng(9999)
 
 # Perturbation directions (random Hermitian matrices)
 perturbations = [
-    (0, make_random_hermitian(rng_G)),   # root
-    (1, make_random_hermitian(rng_G)),   # gen-1 left
-    (3, make_random_hermitian(rng_G)),   # gen-2
-    (7, make_random_hermitian(rng_G)),   # gen-3
+    (0, make_random_hermitian(rng_G)),   # root: affects all leaves
+    (1, make_random_hermitian(rng_G)),   # gen-1 left: leaves 0-7
+    (3, make_random_hermitian(rng_G)),   # gen-2: leaves 0-3
 ]
 
 # Epsilon values: spanning 3 orders of magnitude
 eps_values = [0.5, 0.2, 0.1, 0.05, 0.01, 0.005, 0.001]
 
-# Leaf pairs: siblings (dG=2) and cousins (dG=4)
-# Pick pairs inside the subtree of the perturbed node where possible
+# Leaf pairs: must be INSIDE the perturbed node's subtree
+# node 0 (root): all leaves
+# node 1 (gen1 left): leaves 0-7
+# node 2 (gen1 right): leaves 8-15
+# node 3 (gen2): leaves 0-3
+# node 7 (gen3): leaves 0-1 only (siblings, same subtree)
 leaf_pairs_by_node = {
-    0: [(0,1), (0,8)],   # root affects everything
-    1: [(0,1), (0,2)],   # left subtree
-    3: [(0,1), (2,3)],   # gen-2 subtree
-    7: [(0,1)],          # gen-3
+    0: [(0,1), (0,8), (4,12)],  # root: cross-subtree pairs
+    1: [(0,4), (2,6)],           # left subtree: cousins within
+    3: [(0,2), (1,3)],           # gen-2: cousins within leaves 0-3
+    7: [(0,1)],                  # gen-3: only one pair available
 }
 
 all_results = {}
 all_ratios_small_eps = []
 
 for perturb_node, G in perturbations:
-    pairs = leaf_pairs_by_node.get(perturb_node, [(0,1)])
+    pairs = leaf_pairs_by_node.get(perturb_node, [(0,1), (0,2)])
     print(f"\n{'='*65}")
     print(f"Node {perturb_node} perturbation, pairs {pairs}")
     print(f"{'='*65}")
